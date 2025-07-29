@@ -7,6 +7,13 @@
     "formulahendry.auto-rename-tag",
     "christian-kohler.path-intellisense",
     "ms-azuretools.vscode-docker",
-    "rangav.vscode-thunder-client"
+    "rangav.vscode-thunder-client",
+    "Vue.volar",
+    "TailwindLabs.tailwindcss-intellisense",
+    "ms-vscode.vscode-sqltools",
+    "ms-vscode.vscode-sqltools-driver-mysql",
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "ms-ceintl.vscode-language-pack-ja"
   ]
 }
