@@ -7,7 +7,7 @@ async function main() {
     data: {
       name: '山田 太郎',
       email: 'test@example.com',
-      password: 'password123',
+      password: 'Password123!',
     },
   });
 
