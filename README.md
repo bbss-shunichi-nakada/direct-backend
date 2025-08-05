@@ -82,13 +82,13 @@ npx prisma migrate reset
 npm install -g pm2
 
 # サーバー起動
-pm2 start npm --name "dairect-backend-dev" -- run dev
+pm2 start npm --name "direct-backend-dev" -- run dev
 
 # サーバー再起動
-pm2 restart dairect-backend-dev
+pm2 restart direct-backend-dev
 
 # サーバー停止
-pm2 stop dairect-backend-dev
+pm2 stop direct-backend-dev
 
 # pm2 プロセス一覧
 pm2 ls
