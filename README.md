@@ -110,7 +110,7 @@ pm2 save
 ```bash
 curl -X POST http://<EC2のパブリックIP>:3001/api/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+  -d '{"email":"test@example.com","password":"Password123!"}'
 ```
 
 ※ セキュリティグループで 3001 ポートのインバウンド許可が必要です。

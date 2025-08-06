@@ -25,5 +25,5 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/products', productsRouter);
 
 app.listen(port, () => {
-  console.log(`API server running on ${process.env.FRONTEND_ORIGIN}`);
+  console.log(`API server running on http://0.0.0.0:${port}`);
 });
