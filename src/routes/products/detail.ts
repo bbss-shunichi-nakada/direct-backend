@@ -3,8 +3,8 @@ import prisma from '../../lib/prisma';
 
 const router = Router();
 
-// GET /api/products/:id
-router.get('/:id', async (req, res) => {
+// GET /api/products/detail/:id
+router.get('/detail/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: 'idの形式が不正です。' });

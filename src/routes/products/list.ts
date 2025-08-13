@@ -4,7 +4,7 @@ import prisma from '../../lib/prisma';
 const router = Router();
 
 // GET /api/products
-router.get('/', async (_req, res) => {
+router.get('/list', async (_req, res) => {
   try {
     const products = await prisma.product.findMany();
     return res.json(products);

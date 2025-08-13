@@ -1,26 +1,39 @@
+// src/index.ts
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import helmet from 'helmet';
+import { env } from './config/env'; // ← env.ts 側で .env を読むようにします
+import logger from './config/logger';
+import { requestId } from './middlewares/requestId';
+import { apiLimiter } from './middlewares/rateLimit';
+import { notFoundHandler, errorHandler } from './middlewares/error';
 import usersRouter from './routes/users';
 import ordersRouter from './routes/orders';
 import productsRouter from './routes/products';
 
-dotenv.config();
 const app = express();
-const port = 3001;
+
+app.use(helmet());
+app.use(requestId);
+app.use(express.json({ limit: '1mb' }));
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN,
+    origin: env.FRONTEND_ORIGIN ?? true,
     credentials: true,
   })
 );
-app.use(express.json());
+
+app.use('/api', apiLimiter);
 
 app.use('/api/users', usersRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/products', productsRouter);
 
-app.listen(port, () => {
-  console.log(`API server running on http://0.0.0.0:${port}`);
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// ✅ Winston は (message, meta)
+app.listen(env.PORT, () => {
+  logger.info('server_started', { port: env.PORT, env: env.NODE_ENV });
 });
