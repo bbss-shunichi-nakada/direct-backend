@@ -34,6 +34,29 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // ✅ Winston は (message, meta)
-app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
   logger.info('server_started', { port: env.PORT, env: env.NODE_ENV });
 });
+
+// 健康チェック
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+app.get('/readyz', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).send('ready');
+  } catch {
+    res.status(500).send('not-ready');
+  }
+});
+
+// Graceful shutdown
+import prisma from './lib/prisma';
+const shutdown = async (signal: string) => {
+  logger.info('shutdown_signal', { signal });
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+};
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
