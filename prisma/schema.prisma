@@ -8,27 +8,43 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String
-  email    String   @unique
-  password String
-  orders   Order[]
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  orders    Order[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Product {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
   price       Int
-  orders      Order[] // 中間テーブルがない場合、仮に直接関連付ける形
+  stock       Int       @default(0)
+  items       OrderItem[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Order {
-  id        Int      @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+  total     Int         // 冪等のためサーバで合計算出して保存
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId Int
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
-  total     Int
+  unitPrice Int      // 受注時のスナップショット
+  lineTotal Int      // unitPrice * quantity
 }

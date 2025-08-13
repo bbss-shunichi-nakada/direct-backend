@@ -19,3 +19,12 @@ export const updateBody = z.object({
 export const patchBody = z.object({
   quantity: z.coerce.number().int().positive().optional(),
 });
+
+export const itemParams = z.object({
+  orderId: z.coerce.number().int().positive(),
+  itemId: z.coerce.number().int().positive(),
+});
+
+export const itemUpdateBody = z.object({
+  quantity: z.coerce.number().int().positive(),
+});

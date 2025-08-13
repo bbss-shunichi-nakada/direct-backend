@@ -6,6 +6,7 @@ import detailRouter from './detail';
 import updateRouter from './update';
 import patchRouter from './patch';
 import removeRouter from './remove';
+import itemUpdateRouter from './itemUpdate'
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use(detailRouter);
 router.use(updateRouter);
 router.use(patchRouter);
 router.use(removeRouter);
+router.use(itemUpdateRouter)
 
 export default router;

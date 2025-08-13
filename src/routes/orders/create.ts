@@ -1,26 +1,21 @@
-import { Router } from 'express'
-import prisma from '../../lib/prisma'
-import type { AuthenticatedRequest } from '../../middlewares/auth'
-import { asyncHandler } from '../../middlewares/async'
-import { BadRequestError, NotFoundError } from '../../utils/errors'
+import { Router } from 'express';
+import type { AuthenticatedRequest } from '../../middlewares/auth';
+import { validateBody } from '../../middlewares/validate';
+import { createBody } from '../../schemas/orders';
+import { created } from '../../utils/response';
+import { createOrder } from '../../services/orders.service';
 
-const router = Router()
+const router = Router();
 
-router.post('/create', asyncHandler(async (req: AuthenticatedRequest, res) => {
-  const { productId, quantity } = req.body as { productId?: number; quantity?: number }
-  const pid = Number(productId)
-  const qty = Number(quantity)
-  if (!Number.isInteger(pid) || pid <= 0) throw new BadRequestError('productIdの形式が不正です。')
-  if (!Number.isInteger(qty) || qty <= 0) throw new BadRequestError('quantityは1以上の整数で指定してください。')
+// POST /api/orders  { productId, quantity }  （1注文=1商品の簡易API）
+router.post('/', validateBody(createBody), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const { productId, quantity } = req.body;
+    const order = await createOrder(req.user!.id, productId, quantity);
+    return created(res, order);
+  } catch (e) {
+    next(e);
+  }
+});
 
-  const product = await prisma.product.findUnique({ where: { id: pid } })
-  if (!product) throw new NotFoundError('商品が見つかりません。')
-
-  const order = await prisma.order.create({
-    data: { userId: req.user!.id, productId: pid, quantity: qty, total: product.price * qty },
-    include: { product: true },
-  })
-  return res.status(201).json(order)
-}))
-
-export default router
+export default router;
