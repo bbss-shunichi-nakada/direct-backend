@@ -5,15 +5,13 @@ import { BadRequestError, NotFoundError } from '../../utils/errors'
 
 const router = Router()
 
-// GET /api/products/:id
-router.get('/:id', asyncHandler(async (req, res) => {
+// DELETE /api/products/:id
+router.delete('/:id', asyncHandler(async (req, res) => {
   const id = Number(req.params.id)
   if (!Number.isInteger(id) || id <= 0) throw new BadRequestError('idの形式が不正です。')
 
-  const product = await prisma.product.findUnique({ where: { id } })
-  if (!product) throw new NotFoundError('商品が見つかりません。')
-
-  return res.json(product)
+  await prisma.product.delete({ where: { id } })
+  return res.status(204).end()
 }))
 
 export default router

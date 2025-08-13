@@ -1,56 +1,40 @@
-import express from 'express';
+import { Router } from 'express';
 import prisma from '../../lib/prisma';
-import { verifyPassword } from '../../utils/hash';
 import { generateToken } from '../../utils/jwt';
+import { verifyPassword } from '../../utils/hash';
+import { asyncHandler } from '../../middlewares/async';
+import { BadRequestError, UnauthorizedError } from '../../utils/errors';
 
-const router = express.Router();
+const router = Router();
 
-/**
- * POST /api/login
- * body: { email: string, password: string }
- * 成功: { token: string, user: { id, name, email } }
- */
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body as { email?: string; password?: string };
+/** POST /api/users/login */
+router.post(
+  '/login',
+  asyncHandler(async (req, res) => {
+    const { email, password } = req.body as { email?: string; password?: string };
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'email, passwordは必須です。' });
-  }
-  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: 'emailの形式が不正です。' });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(401).json({ error: 'メールアドレスまたはパスワードが不正です。' });
+    if (!email || !password) {
+      throw new BadRequestError('email, passwordは必須です。');
     }
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(email)) {
+      throw new BadRequestError('emailの形式が不正です。');
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new UnauthorizedError('メールアドレスまたはパスワードが不正です。');
 
     const stored = user.password;
-
-    // 既存データ移行の便宜: もし平文が混在していた場合のフォールバック
-    // bcryptハッシュ形式は "$2" で始まる
-    let ok = false;
-    if (stored.startsWith('$2')) {
-      ok = await verifyPassword(password, stored);
-    } else {
-      // 平文時代のデータ互換（早期に全ユーザーの再ハッシュ移行を推奨）
-      ok = password === stored;
-    }
-
-    if (!ok) {
-      return res.status(401).json({ error: 'メールアドレスまたはパスワードが不正です。' });
-    }
+    // 旧データ互換：ハッシュ($2...)なら検証、そうでなければ暫定的に平文比較
+    const ok = stored.startsWith('$2')
+      ? await verifyPassword(password, stored)
+      : password === stored;
+    if (!ok) throw new UnauthorizedError('メールアドレスまたはパスワードが不正です。');
 
     const token = generateToken({ userId: user.id });
-    // パスワードは返さない
     const { id, name } = user;
     return res.json({ token, user: { id, name, email } });
-  } catch (e) {
-    console.error('ログインエラー:', e);
-    return res.status(500).json({ error: 'ログインに失敗しました。' });
-  }
-});
+  })
+);
 
 export default router;
