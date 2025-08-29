@@ -1,10 +1,11 @@
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default_secret'
-const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY || '1h'
+const JWT_SECRET = env.JWT_SECRET;
+const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN;
 
 interface Payload {
-  userId: number
+  userId: number;
 }
 
 /**
@@ -12,13 +13,13 @@ interface Payload {
  */
 export const generateToken = (payload: Payload): string => {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: TOKEN_EXPIRY,
-  })
-}
+    expiresIn: JWT_EXPIRES_IN,
+  });
+};
 
 /**
  * トークンからpayloadを復号する
  */
 export const verifyToken = (token: string): Payload => {
-  return jwt.verify(token, JWT_SECRET) as Payload
-}
+  return jwt.verify(token, JWT_SECRET) as Payload;
+};

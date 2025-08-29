@@ -45,23 +45,45 @@ export const getMyOrder = (userId: number, id: number) =>
     include: { items: { include: { product: true } } },
   });
 
-/** 1注文=1商品（簡易API）で新規作成。在庫引当と total 確定をトランザクションで実施 */
+/**
+ * 在庫を条件付きで減らす（楽観ロック）。
+ * 成功: 1件更新、失敗: 0件更新（在庫不足）
+ */
+async function conditionalDecrementStock(
+  tx: Prisma.TransactionClient,
+  productId: number,
+  delta: number
+) {
+  const updatedRows: number = await tx.$executeRaw`
+    UPDATE Product
+    SET stock = stock - ${delta}
+    WHERE id = ${productId} AND stock >= ${delta}
+  `;
+  if (updatedRows === 0) throw new ConflictError('在庫が不足しています。');
+}
+
+/** 在庫増やす（戻す） */
+async function incrementStock(tx: Prisma.TransactionClient, productId: number, deltaAbs: number) {
+  await tx.product.update({
+    where: { id: productId },
+    data: { stock: { increment: deltaAbs } },
+  });
+}
+
+/** 1注文=1商品（簡易API）で新規作成。 */
 export const createOrder = async (userId: number, productId: number, quantity: number) => {
   if (quantity <= 0) throw new BadRequestError('quantityは1以上で指定してください。');
 
   return prisma.$transaction(async (tx) => {
     const product = await tx.product.findUnique({ where: { id: productId } });
     if (!product) throw new NotFoundError('商品が見つかりません。');
-    if (product.stock < quantity) throw new ConflictError('在庫が不足しています。');
+
+    // ★ 条件付き在庫引当（同時更新でも在庫超過しない）
+    await conditionalDecrementStock(tx, productId, quantity);
 
     const unitPrice = product.price;
     const lineTotal = unitPrice * quantity;
     const total = lineTotal;
-
-    await tx.product.update({
-      where: { id: productId },
-      data: { stock: { decrement: quantity } },
-    });
 
     const order = await tx.order.create({
       data: {
@@ -98,13 +120,11 @@ export const updateOrderQuantity = async (userId: number, orderId: number, newQt
 
     const delta = newQty - item.quantity;
     if (delta > 0) {
-      if (product.stock < delta) throw new ConflictError('在庫が不足しています。');
-      await tx.product.update({ where: { id: product.id }, data: { stock: { decrement: delta } } });
+      // ★ 在庫を条件付きで減らす
+      await conditionalDecrementStock(tx, product.id, delta);
     } else if (delta < 0) {
-      await tx.product.update({
-        where: { id: product.id },
-        data: { stock: { increment: -delta } },
-      });
+      // 戻しは条件不要
+      await incrementStock(tx, product.id, -delta);
     }
 
     const lineTotal = product.price * newQty;
@@ -132,7 +152,7 @@ export const updateOrderQuantity = async (userId: number, orderId: number, newQt
 /**
  * 注文中の特定アイテムの数量を更新（複数アイテム対応）。
  * 受注時の unitPrice は固定し、数量変更時は lineTotal のみ再計算。
- * 在庫は差分で増減。Order.total は items の合計で再計算して保存。
+ * 在庫は差分で増減（減は条件付き）。Order.total は items の合計で再計算して保存。
  */
 export const updateOrderItemQuantity = async (
   userId: number,
@@ -159,16 +179,12 @@ export const updateOrderItemQuantity = async (
 
     const delta = newQty - item.quantity;
     if (delta > 0) {
-      if (product.stock < delta) throw new ConflictError('在庫が不足しています。');
-      await tx.product.update({ where: { id: product.id }, data: { stock: { decrement: delta } } });
+      await conditionalDecrementStock(tx, product.id, delta);
     } else if (delta < 0) {
-      await tx.product.update({
-        where: { id: product.id },
-        data: { stock: { increment: -delta } },
-      });
+      await incrementStock(tx, product.id, -delta);
     }
 
-    const unitPrice = item.unitPrice; // 受注スナップショットを維持
+    const unitPrice = item.unitPrice;
     const lineTotal = unitPrice * newQty;
 
     await tx.orderItem.update({
