@@ -1,9 +1,10 @@
+import { env } from '../config/env';
 import prisma from '../lib/prisma';
 import { Prisma } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { hashPassword, verifyPassword } from '../utils/hash';
 import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
 
-const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? 10);
+const SALT_ROUNDS = env.BCRYPT_SALT_ROUNDS;
 
 // 返却時に password は含めない
 const userPublicSelect = {
@@ -75,13 +76,13 @@ export const createUser = async (input: SignupInput) => {
   const exists = await prisma.user.findUnique({ where: { email: input.email } });
   if (exists) throw new ConflictError('このメールアドレスは既に利用されています。');
 
-  const hashed = await bcrypt.hash(input.password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(input.password);
 
   // いまは User テーブルに存在するカラムのみ保存（name, email, password など）
   const user = await prisma.user.create({
     data: {
       email: input.email,
-      password: hashed,
+      password: passwordHash,
       name: input.name ?? '',
     },
     select: userPublicSelect,
@@ -96,7 +97,7 @@ export const authenticateUser = async (email: string, password: string) => {
   if (!user || !user.password)
     throw new UnauthorizedError('メールアドレスまたはパスワードが違います。');
 
-  const ok = await bcrypt.compare(password, user.password);
+  const ok = await verifyPassword(password, user.password);
   if (!ok) throw new UnauthorizedError('メールアドレスまたはパスワードが違います。');
 
   // 公開項目に整形して返す

@@ -1,4 +1,4 @@
-// src/index.ts
+import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import { env } from './config/env';

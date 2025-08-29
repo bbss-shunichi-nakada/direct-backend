@@ -1,4 +1,3 @@
-// src/middlewares/error.ts
 import type { Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import logger from '../config/logger';

@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -18,6 +17,9 @@ const schema = z.object({
 
   // DB
   DATABASE_URL: z.string(),
+
+  // bcrypt
+  BCRYPT_SALT_ROUNDS: z.coerce.number().min(4).default(10),
 });
 
 export const env = schema.parse(process.env);
