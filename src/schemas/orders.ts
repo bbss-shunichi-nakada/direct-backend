@@ -5,6 +5,13 @@ export const listQuery = z.object({
   offset: z.coerce.number().int().nonnegative().default(0),
 });
 
+export const ordersListQuery = z.object({
+  limit: z.coerce.number().int().positive().default(20),
+  offset: z.coerce.number().int().nonnegative().default(0),
+  q: z.string().trim().optional().default(''),
+  sort: z.enum(['newest', 'total_asc', 'total_desc']).default('newest'),
+});
+
 export const idParams = z.object({ id: z.coerce.number().int().positive() });
 
 export const createBody = z.object({

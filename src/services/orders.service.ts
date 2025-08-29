@@ -1,21 +1,57 @@
-import prisma from '../lib/prisma';
+import prisma from '../lib/prisma'
+import { Prisma } from '@prisma/client'
 import { BadRequestError, NotFoundError, ConflictError } from '../utils/errors';
+
+export type OrderSort = 'newest' | 'total_asc' | 'total_desc';
+
+export const listMyOrders = async (
+  userId: number,
+  limit: number,
+  offset: number,
+  q = '',
+  sort: OrderSort = 'newest'
+) => {
+  const where: Prisma.OrderWhereInput = {
+    userId,
+    ...(q ? { items: { some: { product: { name: { contains: q } } } } } : {}),
+  };
+
+  // ✅ 型注釈で Prisma の orderBy 型に合わせる
+  const orderBy: Prisma.OrderOrderByWithRelationInput =
+    sort === 'total_asc'
+      ? { total: 'asc' as const }
+      : sort === 'total_desc'
+      ? { total: 'desc' as const }
+      : { createdAt: 'desc' as const };
+
+  const [items, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy,
+      include: { items: { include: { product: true } } },
+      skip: offset,
+      take: limit,
+    }),
+    prisma.order.count({ where }),
+  ]);
+  return { items, total };
+};
 
 /**
  * 一覧（自分の注文のみ）
  * V2: items(+product) を含めて返す
  */
-export const listMyOrders = (userId: number, limit: number, offset: number) =>
-  Promise.all([
-    prisma.order.findMany({
-      where: { userId },
-      include: { items: { include: { product: true } } },
-      orderBy: { id: 'desc' },
-      skip: offset,
-      take: limit,
-    }),
-    prisma.order.count({ where: { userId } }),
-  ]);
+// export const listMyOrders = (userId: number, limit: number, offset: number) =>
+//   Promise.all([
+//     prisma.order.findMany({
+//       where: { userId },
+//       include: { items: { include: { product: true } } },
+//       orderBy: { id: 'desc' },
+//       skip: offset,
+//       take: limit,
+//     }),
+//     prisma.order.count({ where: { userId } }),
+//   ]);
 
 /** 1件取得（自分の注文のみ、items(+product) 付き） */
 export const getMyOrder = (userId: number, id: number) =>
