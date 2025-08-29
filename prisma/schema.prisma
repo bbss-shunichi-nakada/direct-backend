@@ -7,25 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  email     String    @unique
+  email     String   @unique
   password  String
+  role      Role     @default(USER)
   orders    Order[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[] @relation("UserAuditLogs")
 }
 
 model Product {
-  id          Int       @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   description String?
   price       Int
-  stock       Int       @default(0)
+  stock       Int         @default(0)
   items       OrderItem[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([name])
+  @@index([price])
+  @@index([createdAt])
 }
 
 model Order {
@@ -33,18 +45,40 @@ model Order {
   userId    Int
   user      User        @relation(fields: [userId], references: [id])
   items     OrderItem[]
-  total     Int         // 冪等のためサーバで合計算出して保存
+  total     Int // 冪等のためサーバで合計算出して保存
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, total])
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
   quantity  Int
-  unitPrice Int      // 受注時のスナップショット
-  lineTotal Int      // unitPrice * quantity
+  unitPrice Int // 受注時のスナップショット
+  lineTotal Int // unitPrice * quantity
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  action     String
+  entityType String?
+  entityId   Int?
+  before     Json?
+  after      Json?
+  requestId  String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation("UserAuditLogs", fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId, createdAt])
 }

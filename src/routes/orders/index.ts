@@ -1,17 +1,21 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/auth';
+import { idempotency } from '../../middlewares/idempotency';
 import listRouter from './list';
 import createRouter from './create';
 import detailRouter from './detail';
 import updateRouter from './update';
 import patchRouter from './patch';
 import removeRouter from './remove';
-import itemUpdateRouter from './itemUpdate'
+import itemUpdateRouter from './itemUpdate';
 
 const router = Router();
 
 // すべての /api/orders 配下は認証必須
 router.use(authenticate);
+
+// ★ ここで orders 配下の POST/PUT/PATCH/DELETE 全部に適用される（GETは素通り）
+router.use(idempotency);
 
 // GET /api/orders （自分の注文のみ）
 router.use(listRouter);
@@ -23,6 +27,6 @@ router.use(detailRouter);
 router.use(updateRouter);
 router.use(patchRouter);
 router.use(removeRouter);
-router.use(itemUpdateRouter)
+router.use(itemUpdateRouter);
 
 export default router;
