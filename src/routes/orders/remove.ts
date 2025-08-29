@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import type { AuthenticatedRequest } from '../../middlewares/auth';
 import { asyncHandler } from '../../middlewares/async';
-import { BadRequestError } from '../../utils/errors';
+import { validateParams } from '../../middlewares/validate';
+import { orderIdParams } from '../../schemas/orders';
+import type { AuthenticatedRequest } from '../../middlewares/auth';
 import { deleteMyOrder } from '../../services/orders.service';
 
 const router = Router();
@@ -9,10 +10,9 @@ const router = Router();
 // DELETE /api/orders/:id
 router.delete(
   '/:id',
+  validateParams(orderIdParams),
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) throw new BadRequestError('idの形式が不正です。');
-
+    const { id } = req.params as any;
     await deleteMyOrder(req.user!.id, id);
     return res.status(204).end();
   })

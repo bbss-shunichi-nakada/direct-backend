@@ -1,19 +1,21 @@
 import { Router } from 'express';
-import { authenticate, type AuthenticatedRequest } from '../../middlewares/auth';
+import { asyncHandler } from '../../middlewares/async';
+import type { AuthenticatedRequest } from '../../middlewares/auth';
 import { ok } from '../../utils/response';
+import { getUserById } from '../../services/users.service';
 import { NotFoundError } from '../../utils/errors';
-import { getMe } from '../../services/users.service';
 
 const router = Router();
 
-router.get('/me', authenticate, async (req: AuthenticatedRequest, res, next) => {
-  try {
-    const me = await getMe(req.user!.id);
-    if (!me) throw new NotFoundError('ユーザーが見つかりません。');
-    return ok(res, me);
-  } catch (e) {
-    next(e);
-  }
-});
+// GET /api/users/me
+router.get(
+  '/me',
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const id = req.user!.id; // 型は { id:number } として扱う
+    const user = await getUserById(id); // 公開フィールドだけを返すサービス
+    if (!user) throw new NotFoundError('ユーザーが見つかりません。');
+    return ok(res, user);
+  })
+);
 
 export default router;

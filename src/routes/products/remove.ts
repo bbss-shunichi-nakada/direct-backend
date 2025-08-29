@@ -1,17 +1,20 @@
-import { Router } from 'express'
-import prisma from '../../lib/prisma'
-import { asyncHandler } from '../../middlewares/async'
-import { BadRequestError, NotFoundError } from '../../utils/errors'
+import { Router } from 'express';
+import { asyncHandler } from '../../middlewares/async';
+import { validateParams } from '../../middlewares/validate';
+import { productIdParams } from '../../schemas/products';
+import { removeProduct } from '../../services/products.service';
 
-const router = Router()
+const router = Router();
 
 // DELETE /api/products/:id
-router.delete('/:id', asyncHandler(async (req, res) => {
-  const id = Number(req.params.id)
-  if (!Number.isInteger(id) || id <= 0) throw new BadRequestError('idの形式が不正です。')
+router.delete(
+  '/:id',
+  validateParams(productIdParams),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params as any;
+    await removeProduct(id);
+    return res.status(204).end();
+  })
+);
 
-  await prisma.product.delete({ where: { id } })
-  return res.status(204).end()
-}))
-
-export default router
+export default router;

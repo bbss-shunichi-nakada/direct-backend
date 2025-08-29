@@ -1,19 +1,21 @@
-import { Router } from 'express'
-import prisma from '../../lib/prisma'
-import { asyncHandler } from '../../middlewares/async'
-import { BadRequestError, NotFoundError } from '../../utils/errors'
+import { Router } from 'express';
+import { asyncHandler } from '../../middlewares/async';
+import { validateQuery } from '../../middlewares/validate';
+import { paged } from '../../utils/response';
+import { productsListQuery } from '../../schemas/products';
+import { listProducts } from '../../services/products.service';
 
-const router = Router()
+const router = Router();
 
-// GET /api/products/:id
-router.get('/:id', asyncHandler(async (req, res) => {
-  const id = Number(req.params.id)
-  if (!Number.isInteger(id) || id <= 0) throw new BadRequestError('idの形式が不正です。')
+// GET /api/products?limit=&offset=&q=&sort=
+router.get(
+  '/',
+  validateQuery(productsListQuery),
+  asyncHandler(async (req, res) => {
+    const { limit, offset, q, sort } = req.query as any;
+    const { items, total } = await listProducts(limit, offset, q, sort);
+    return paged(res, items, total, limit, offset, { q, sort });
+  })
+);
 
-  const product = await prisma.product.findUnique({ where: { id } })
-  if (!product) throw new NotFoundError('商品が見つかりません。')
-
-  return res.json(product)
-}))
-
-export default router
+export default router;

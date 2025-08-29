@@ -1,9 +1,8 @@
-// src/routes/products/list.ts
 import { Router } from 'express';
-import { validateQuery } from '../../middlewares/validate';
-import { productsListQuery } from '../../schemas/products';
-import { paged } from '../../utils/response';
 import { asyncHandler } from '../../middlewares/async';
+import { validateQuery } from '../../middlewares/validate';
+import { paged } from '../../utils/response';
+import { productsListQuery } from '../../schemas/products';
 import { listProducts } from '../../services/products.service';
 
 const router = Router();

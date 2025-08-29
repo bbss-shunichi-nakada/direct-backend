@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-export const listQuery = z.object({
-  limit: z.coerce.number().int().positive().default(20),
-  offset: z.coerce.number().int().nonnegative().default(0),
-});
-
+// 一覧
 export const ordersListQuery = z.object({
   limit: z.coerce.number().int().positive().default(20),
   offset: z.coerce.number().int().nonnegative().default(0),
@@ -12,26 +8,32 @@ export const ordersListQuery = z.object({
   sort: z.enum(['newest', 'total_asc', 'total_desc']).default('newest'),
 });
 
-export const idParams = z.object({ id: z.coerce.number().int().positive() });
+// 共通
+export const orderIdParams = z.object({
+  id: z.coerce.number().int().positive(),
+});
 
-export const createBody = z.object({
+// 1商品での作成（後方互換API）
+export const orderCreateBody = z.object({
   productId: z.coerce.number().int().positive(),
   quantity: z.coerce.number().int().positive(),
 });
 
-export const updateBody = z.object({
+// 1アイテム注文の数量更新（互換API）
+export const orderUpdateBody = z.object({
   quantity: z.coerce.number().int().positive(),
 });
 
-export const patchBody = z.object({
+// PATCH（現状は数量のみ許容）
+export const orderPatchBody = z.object({
   quantity: z.coerce.number().int().positive().optional(),
 });
 
-export const itemParams = z.object({
+// アイテム単位更新用
+export const orderItemParams = z.object({
   orderId: z.coerce.number().int().positive(),
   itemId: z.coerce.number().int().positive(),
 });
-
-export const itemUpdateBody = z.object({
+export const orderItemUpdateBody = z.object({
   quantity: z.coerce.number().int().positive(),
 });
