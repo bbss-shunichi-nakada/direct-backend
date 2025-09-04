@@ -12,8 +12,14 @@ const schema = z.object({
 
   // JWT は必須（未設定なら起動時に落ちる）
   JWT_SECRET: z.string(),
-  // 例: "15m" | "7d" | 3600
-  JWT_EXPIRES_IN: z.union([z.coerce.number().int().positive(), z.string()]).default('7d'),
+  JWT_EXPIRES_IN: z.union([z.coerce.number().int().positive(), z.string()]).default('15m'), // アクセス
+  REFRESH_TOKEN_EXPIRES_IN: z.union([z.coerce.number().int().positive(), z.string()]).default('7d'),
+  REFRESH_TOKEN_COOKIE: z.string().default('refresh_token'), // Cookie名
+  REFRESH_COOKIE_PATH: z.string().default('/api/users'),
+
+  // Cookie設定
+  COOKIE_DOMAIN: z.string().optional(),
+  COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
 
   // DB
   DATABASE_URL: z.string(),

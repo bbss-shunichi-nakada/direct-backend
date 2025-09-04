@@ -23,6 +23,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   auditLogs AuditLog[] @relation("UserAuditLogs")
+  refreshTokens  RefreshToken[]
 }
 
 model Product {
@@ -81,4 +82,20 @@ model AuditLog {
 
   @@index([userId, createdAt])
   @@index([entityType, entityId, createdAt])
+}
+
+model RefreshToken {
+  id          Int       @id @default(autoincrement())
+  jti         String    @unique                  // トークン識別子
+  userId      Int
+  revokedAt   DateTime?
+  replacedBy  String?                           // 新しいJTI（ローテ後の追跡）
+  expiresAt   DateTime
+  userAgent   String?
+  ip          String?
+  createdAt   DateTime  @default(now())
+
+  user User   @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt])
 }

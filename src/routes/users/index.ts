@@ -1,6 +1,10 @@
 import { Router } from 'express';
+import { authenticate } from '../../middlewares/auth';
 import { idempotency } from '../../middlewares/idempotency';
 import loginRouter from './login';
+import refreshRouter from './refresh';
+import logoutRouter from './logout';
+import logoutOneRouter from './logoutOne';
 import signupRouter from './signup';
 import meRouter from './me';
 import detailRouter from './detail';
@@ -14,6 +18,9 @@ const router = Router();
 router.use(idempotency);
 
 router.use(loginRouter); // /api/users/login
+router.use(refreshRouter); // /api/users/refresh
+router.use(authenticate, logoutRouter); // /api/users/logout
+router.use(logoutOneRouter); // /api/users/logoutOne
 router.use(signupRouter); // /api/users/signup
 router.use(meRouter); // /api/users/me
 router.use(detailRouter);

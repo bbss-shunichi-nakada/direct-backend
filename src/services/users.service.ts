@@ -1,10 +1,7 @@
-import { env } from '../config/env';
 import prisma from '../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { hashPassword, verifyPassword } from '../utils/hash';
 import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
-
-const SALT_ROUNDS = env.BCRYPT_SALT_ROUNDS;
 
 // 返却時に password は含めない
 const userPublicSelect = {

@@ -1,28 +1,35 @@
+// src/routes/users/login.ts
 import { Router } from 'express';
-import { asyncHandler } from '../../middlewares/async';
 import { validateBody } from '../../middlewares/validate';
 import { loginBody } from '../../schemas/users';
 import { ok } from '../../utils/response';
+import { UnauthorizedError } from '../../utils/errors';
 import { authenticateUser } from '../../services/users.service';
 import { loginLimiter } from '../../middlewares/rateLimit';
-import { generateToken } from '../../utils/jwt';
+import { issueTokenPair } from '../../services/tokens.service';
+import { verifyRefreshToken } from '../../utils/refresh';
+import { refreshCookieOptions } from '../../utils/cookies';
+import { env } from '../../config/env';
 
 const router = Router();
 
-// POST /api/users/login
-router.post(
-  '/login',
-  loginLimiter,
-  validateBody(loginBody),
-  asyncHandler(async (req, res) => {
+router.post('/login', loginLimiter, validateBody(loginBody), async (req, res, next) => {
+  try {
     const { email, password } = req.body;
     const user = await authenticateUser(email, password);
+    if (!user) throw new UnauthorizedError('メールアドレスまたはパスワードが不正です。');
 
-    const payload = { userId: user.id, email: user.email };
-    const token = generateToken(payload);
+    const meta = { ua: req.headers['user-agent'] as string, ip: req.ip };
+    const { access, refresh } = await issueTokenPair(user.id, user.email, meta);
 
-    return ok(res, { token, user });
-  })
-);
+    const decoded = verifyRefreshToken(refresh);
+    const maxAgeMs = decoded.exp ? Math.max(0, decoded.exp * 1000 - Date.now()) : undefined;
+    res.cookie(env.REFRESH_TOKEN_COOKIE, refresh, refreshCookieOptions(maxAgeMs));
+
+    return ok(res, { accessToken: access, user });
+  } catch (e) {
+    next(e);
+  }
+});
 
 export default router;

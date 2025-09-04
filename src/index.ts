@@ -5,17 +5,23 @@ import { env } from './config/env';
 import logger from './config/logger';
 import corsConfigured from './middlewares/cors';
 import { requestId } from './middlewares/requestId';
+import { metricsMiddleware } from './middlewares/metrics';
+import metricsRouter from './routes/common/metrics';
 import { generalLimiter } from './middlewares/rateLimit';
 import { notFoundHandler, errorHandler } from './middlewares/error';
 import usersRouter from './routes/users';
 import ordersRouter from './routes/orders';
 import productsRouter from './routes/products';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
 app.use(helmet());
 app.use(corsConfigured);
+app.use(cookieParser());
 app.use(requestId);
+app.use(metricsMiddleware);
+app.use('/', metricsRouter);
 app.use(express.json({ limit: '1mb' }));
 
 app.use('/api', generalLimiter);
