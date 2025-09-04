@@ -13,12 +13,14 @@ import usersRouter from './routes/users';
 import ordersRouter from './routes/orders';
 import productsRouter from './routes/products';
 import cookieParser from 'cookie-parser';
+import { csrfHint } from './middlewares/csrfHint';
 
 const app = express();
 
 app.use(helmet());
 app.use(corsConfigured);
 app.use(cookieParser());
+app.use(csrfHint);
 app.use(requestId);
 app.use(metricsMiddleware);
 app.use('/', metricsRouter);
@@ -28,6 +30,11 @@ app.use('/api', generalLimiter);
 app.use('/api/users', usersRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/products', productsRouter);
+
+// ★ v1 エイリアス（将来の互換確保）
+app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/products', productsRouter);
+app.use('/api/v1/orders', ordersRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

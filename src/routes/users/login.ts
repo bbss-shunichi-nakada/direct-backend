@@ -26,7 +26,8 @@ router.post('/login', loginLimiter, validateBody(loginBody), async (req, res, ne
     const maxAgeMs = decoded.exp ? Math.max(0, decoded.exp * 1000 - Date.now()) : undefined;
     res.cookie(env.REFRESH_TOKEN_COOKIE, refresh, refreshCookieOptions(maxAgeMs));
 
-    return ok(res, { accessToken: access, user });
+    // ★ 将来MFAを導入してもAPI契約を固定できるようにフラグを返す（いまは false）
+    return ok(res, { accessToken: access, user, mfaRequired: false });
   } catch (e) {
     next(e);
   }
