@@ -3,8 +3,8 @@ import type { StringValue } from 'ms';
 import { env } from '../config/env';
 
 export interface RefreshSignPayload {
-  jti: string;     // RefreshToken の識別子
-  sub: string;     // ユーザーID（文字列）
+  jti: string; // RefreshToken の識別子
+  sub: string; // ユーザーID（文字列）
 }
 
 interface RefreshClaims extends JwtPayload {
