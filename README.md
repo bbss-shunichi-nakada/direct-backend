@@ -261,4 +261,4 @@ curl "http://localhost:3001/api/products?limit=20"
 
 ## 📜 ライセンス
 
-Private (c) BBSS
+Private (c) BBSS org
